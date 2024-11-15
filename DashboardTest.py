@@ -125,5 +125,23 @@ class MyTestCase(unittest.TestCase):
         assert_that(uptime).is_equal_to(100)
 
 
+    def test_calc_uptime_intermittent(self):
+        interval = 10
+        window = 60
+        now = datetime.now(tz=timezone.utc)
+        dash = DashBoard(heartbeat_interval=interval, uptime_window=window)
+
+        heartbeat = HeartBeat("Patrick", now)
+        dash.addHeartBeat(heartbeat)
+        dash.addHeartBeat(heartbeat.next())
+        dash.addHeartBeat(heartbeat.next())
+        dash.addHeartBeat(heartbeat.next())
+        dash.addHeartBeat(heartbeat.next())
+
+        uptime = dash.calculateUptime("Patrick", now + timedelta(seconds=60))
+
+        assert_that(uptime).is_equal_to(83)
+
+
 if __name__ == '__main__':
     unittest.main()
