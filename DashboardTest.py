@@ -72,13 +72,14 @@ class MyTestCase(unittest.TestCase):
     def test_given_a_time_interval_and_matching_heartbeat_data_we_calc_100_uptime_correctly(self):
         dash = DashBoard(heartbeat_interval=10, uptime_window=40)
         heartbeat = HeartBeat(device_id ="Patrick", timestamp = datetime.now(tz=timezone.utc))
-        dash.addHeartBeat(heartbeat)
-        dash.addHeartBeat(heartbeat.next())
-        dash.addHeartBeat(heartbeat.next())
-        dash.addHeartBeat(heartbeat.next())
-        frame = dash.generateViewFrame().to_dict(orient='records')
+        dash.add_heart_beat(heartbeat)
+        dash.add_heart_beat(heartbeat.next())
+        dash.add_heart_beat(heartbeat.next())
+        heartbeat_last = heartbeat.next()
+        dash.add_heart_beat(heartbeat_last)
+        frame = dash.generate_view_frame().to_dict(orient='records')
 
-        data = [{'device_id': 'Patrick', 'uptime': 100}]
+        data = [{'device_id': 'Patrick', 'uptime': 100, 'last seen': heartbeat_last.timestamp}]
 
         expected = pd.DataFrame(data).to_dict(orient='records')
 
@@ -90,11 +91,11 @@ class MyTestCase(unittest.TestCase):
         now = datetime.now(tz=timezone.utc)
         dash = DashBoard(heartbeat_interval=interval, uptime_window=window)
         heartbeat = HeartBeat("Patrick", now)
-        dash.addHeartBeat(heartbeat)
-        dash.addHeartBeat(heartbeat.next())
-        dash.addHeartBeat(heartbeat.next())
+        dash.add_heart_beat(heartbeat)
+        dash.add_heart_beat(heartbeat.next())
+        dash.add_heart_beat(heartbeat.next())
 
-        uptime = dash.calculateUptime("Patrick", now + timedelta(seconds=20))
+        uptime = dash.calculate_uptime("Patrick", now + timedelta(seconds=20))
 
         assert_that(uptime).is_equal_to(100)
 
@@ -104,7 +105,7 @@ class MyTestCase(unittest.TestCase):
         window = 60
         dash = DashBoard(heartbeat_interval=interval, uptime_window=window)
 
-        assert_that(dash.calculate_expected_number_of_heartbeats(interval, window)).is_equal_to(6)
+        assert_that(dash.calculate_expected_number_of_heartbeats()).is_equal_to(6)
 
     def test_calc_uptime2(self):
         interval = 10
@@ -113,14 +114,14 @@ class MyTestCase(unittest.TestCase):
         dash = DashBoard(heartbeat_interval=interval, uptime_window=window)
 
         heartbeat = HeartBeat("Patrick", now)
-        dash.addHeartBeat(heartbeat)
-        dash.addHeartBeat(heartbeat.next())
-        dash.addHeartBeat(heartbeat.next())
-        dash.addHeartBeat(heartbeat.next())
-        dash.addHeartBeat(heartbeat.next())
-        dash.addHeartBeat(heartbeat.next())
+        dash.add_heart_beat(heartbeat)
+        dash.add_heart_beat(heartbeat.next())
+        dash.add_heart_beat(heartbeat.next())
+        dash.add_heart_beat(heartbeat.next())
+        dash.add_heart_beat(heartbeat.next())
+        dash.add_heart_beat(heartbeat.next())
 
-        uptime = dash.calculateUptime("Patrick", now + timedelta(seconds=60))
+        uptime = dash.calculate_uptime("Patrick", now + timedelta(seconds=60))
 
         assert_that(uptime).is_equal_to(100)
 
@@ -132,16 +133,33 @@ class MyTestCase(unittest.TestCase):
         dash = DashBoard(heartbeat_interval=interval, uptime_window=window)
 
         heartbeat = HeartBeat("Patrick", now)
-        dash.addHeartBeat(heartbeat)
-        dash.addHeartBeat(heartbeat.next())
-        dash.addHeartBeat(heartbeat.next())
-        dash.addHeartBeat(heartbeat.next())
-        dash.addHeartBeat(heartbeat.next())
+        dash.add_heart_beat(heartbeat)
+        dash.add_heart_beat(heartbeat.next())
+        dash.add_heart_beat(heartbeat.next())
+        dash.add_heart_beat(heartbeat.next())
+        dash.add_heart_beat(heartbeat.next())
 
-        uptime = dash.calculateUptime("Patrick", now + timedelta(seconds=60))
+        uptime = dash.calculate_uptime("Patrick", now + timedelta(seconds=60))
 
         assert_that(uptime).is_equal_to(83)
 
+    def test_last_seen(self):
+        interval = 10
+        window = 60
+        now = datetime.now(tz=timezone.utc)
+        dash = DashBoard(heartbeat_interval=interval, uptime_window=window)
+
+        heartbeat = HeartBeat("Patrick", now)
+        dash.add_heart_beat(heartbeat)
+        dash.add_heart_beat(heartbeat.next())
+        dash.add_heart_beat(heartbeat.next())
+        dash.add_heart_beat(heartbeat.next())
+        heartbeat_last = heartbeat.next()
+        dash.add_heart_beat(heartbeat_last)
+
+        last = dash.last_seen("Patrick")
+
+        assert_that(last).is_equal_to(heartbeat_last.timestamp)
 
 if __name__ == '__main__':
     unittest.main()

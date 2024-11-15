@@ -9,7 +9,7 @@ class HeartBeat:
             self.device_id: str = field(default_factory=lambda:f"device_{gmtime()}" )
         else:
             self.device_id = device_id
-            self.timestamp: datetime = field(default_factory=lambda: datetime.fromtimestamp(timestamp, tz=timezone.utc))
+            self.timestamp: datetime = datetime.fromtimestamp(timestamp, tz=timezone.utc)
 
     def next(self):
         current_gmt = gmtime()
