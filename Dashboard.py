@@ -19,15 +19,15 @@ class DashBoard:
         self.devices[device_id].add_heartbeat(heartbeat)
 
     def calculateUptime(self, device_id, now = datetime.now()):
-        expected_number_of_heartbeats = self.calculate_expected_number_of_heartbeats(self.heartbeat_interval, self.uptime_window)
-        heartbeats_for_device = self.heartbeats_for_device(device_id)
-        if not heartbeats_for_device:
+        device = self.devices.get(device_id)
+        if not device:
             return 0
-        calculated_uptime = len(heartbeats_for_device) / expected_number_of_heartbeats
-        return int(calculated_uptime * 100)
+        return device.calculate_uptime(self.heartbeat_interval, self.uptime_window, now)
 
     def generate_view_row(self, device_id):
-       return DeviceDashboardViewRow(device_id=device_id, uptime=self.calculateUptime(device_id))
+        the_uptime = self.devices[device_id].calculate_uptime(
+            self.heartbeat_interval, self.uptime_window)
+        return DeviceDashboardViewRow(device_id=device_id, uptime=the_uptime)
 
     def generateViewFrame(self):
         unique_ids = set(self.devices.keys())
@@ -37,6 +37,3 @@ class DashBoard:
     def heartbeats_for_device(self, device_id):
         device = self.devices.get(device_id)
         return device.get_heartbeats() if device else []
-
-    def calculate_expected_number_of_heartbeats(self, interval, window):
-        return self.uptime_window / self.heartbeat_interval

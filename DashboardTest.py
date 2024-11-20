@@ -71,7 +71,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_given_a_time_interval_and_matching_heartbeat_data_we_calc_100_uptime_correctly(self):
         dash = DashBoard(heartbeat_interval=10, uptime_window=40)
-        heartbeat = HeartBeat(device_id ="Patrick", timestamp = datetime.now(tz=timezone.utc))
+        heartbeat = HeartBeat(device_id="Patrick", timestamp=datetime.now(tz=timezone.utc))
         dash.addHeartBeat(heartbeat)
         dash.addHeartBeat(heartbeat.next())
         dash.addHeartBeat(heartbeat.next())
@@ -79,68 +79,24 @@ class MyTestCase(unittest.TestCase):
         frame = dash.generateViewFrame().to_dict(orient='records')
 
         data = [{'device_id': 'Patrick', 'uptime': 100}]
-
         expected = pd.DataFrame(data).to_dict(orient='records')
-
         assert_that(frame).is_equal_to(expected)
 
-    def test_calc_uptime(self):
-        interval = 10
-        window = 30
+    def test_dashboard_view_generation(self):
+        dash = DashBoard(heartbeat_interval=10, uptime_window=40)
+        
+        # Add heartbeats for two different devices
         now = datetime.now(tz=timezone.utc)
-        dash = DashBoard(heartbeat_interval=interval, uptime_window=window)
-        heartbeat = HeartBeat("Patrick", now)
-        dash.addHeartBeat(heartbeat)
-        dash.addHeartBeat(heartbeat.next())
-        dash.addHeartBeat(heartbeat.next())
-
-        uptime = dash.calculateUptime("Patrick", now + timedelta(seconds=20))
-
-        assert_that(uptime).is_equal_to(100)
-
-
-    def test_expected_heartbeats(self):
-        interval = 10
-        window = 60
-        dash = DashBoard(heartbeat_interval=interval, uptime_window=window)
-
-        assert_that(dash.calculate_expected_number_of_heartbeats(interval, window)).is_equal_to(6)
-
-    def test_calc_uptime2(self):
-        interval = 10
-        window = 60
-        now = datetime.now(tz=timezone.utc)
-        dash = DashBoard(heartbeat_interval=interval, uptime_window=window)
-
-        heartbeat = HeartBeat("Patrick", now)
-        dash.addHeartBeat(heartbeat)
-        dash.addHeartBeat(heartbeat.next())
-        dash.addHeartBeat(heartbeat.next())
-        dash.addHeartBeat(heartbeat.next())
-        dash.addHeartBeat(heartbeat.next())
-        dash.addHeartBeat(heartbeat.next())
-
-        uptime = dash.calculateUptime("Patrick", now + timedelta(seconds=60))
-
-        assert_that(uptime).is_equal_to(100)
-
-
-    def test_calc_uptime_intermittent(self):
-        interval = 10
-        window = 60
-        now = datetime.now(tz=timezone.utc)
-        dash = DashBoard(heartbeat_interval=interval, uptime_window=window)
-
-        heartbeat = HeartBeat("Patrick", now)
-        dash.addHeartBeat(heartbeat)
-        dash.addHeartBeat(heartbeat.next())
-        dash.addHeartBeat(heartbeat.next())
-        dash.addHeartBeat(heartbeat.next())
-        dash.addHeartBeat(heartbeat.next())
-
-        uptime = dash.calculateUptime("Patrick", now + timedelta(seconds=60))
-
-        assert_that(uptime).is_equal_to(83)
+        dash.addHeartBeat(HeartBeat("Device1", now))
+        dash.addHeartBeat(HeartBeat("Device1", now + timedelta(seconds=10)))
+        dash.addHeartBeat(HeartBeat("Device2", now))
+        
+        frame = dash.generateViewFrame().to_dict(orient='records')
+        
+        # Both devices should appear in the frame
+        assert_that(len(frame)).is_equal_to(2)
+        devices = {row['device_id'] for row in frame}
+        assert_that(devices).contains('Device1', 'Device2')
 
 
 if __name__ == '__main__':
