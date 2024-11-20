@@ -36,47 +36,73 @@ mqtt_client.start()
 
 # Layout of the app
 app.layout = dbc.Container([
-    html.H1("Device Heartbeat Dashboard", className="text-center my-4"),
-
-    # Settings Row
+    # Header row with title and settings button
     dbc.Row([
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    html.H4("Dashboard Settings", className="mb-3"),
-                    dbc.Row([
-                        dbc.Col([
-                            html.Label("Heartbeat Interval (seconds)"),
-                            dbc.Input(
-                                id="heartbeat-interval",
-                                type="number",
-                                value=10,
-                                min=1,
-                                step=1
-                            ),
-                        ], width=6),
-                        dbc.Col([
-                            html.Label("Uptime Window"),
-                            dcc.Slider(
-                                id="uptime-window",
-                                min=0,
-                                max=4,
-                                step=1,
-                                value=0,
-                                marks=TIME_WINDOW_LABELS
-                            ),
-                        ], width=6),
-                    ]),
-                    dbc.Button(
-                        "Update Settings",
-                        id="update-settings",
-                        color="primary",
-                        className="mt-3"
-                    ),
-                ])
-            ], className="mb-4")
-        ])
-    ]),
+        dbc.Col(
+            html.H1("Device Heartbeat Dashboard", className="text-center"),
+            width=10
+        ),
+        dbc.Col(
+            dbc.Button(
+                "Settings ",
+                id="settings-button",
+                color="secondary",
+                className="float-end",
+                n_clicks=0,
+            ),
+            width=2,
+            className="d-flex align-items-center"
+        ),
+    ], className="mb-4"),
+
+    # Settings Button
+    # dbc.Button(
+    #     "Settings ",
+    #     id="settings-button",
+    #     color="secondary",
+    #     className="mb-3",
+    #     n_clicks=0,
+    # ),
+
+    # Collapsible Settings
+    dbc.Collapse(
+        dbc.Card([
+            dbc.CardBody([
+                html.H4("Dashboard Settings", className="mb-3"),
+                dbc.Row([
+                    dbc.Col([
+                        html.Label("Heartbeat Interval (seconds)"),
+                        dbc.Input(
+                            id="heartbeat-interval",
+                            type="number",
+                            value=10,
+                            min=1,
+                            step=1
+                        ),
+                    ], width=6),
+                    dbc.Col([
+                        html.Label("Uptime Window"),
+                        dcc.Slider(
+                            id="uptime-window",
+                            min=0,
+                            max=4,
+                            step=1,
+                            value=0,
+                            marks=TIME_WINDOW_LABELS
+                        ),
+                    ], width=6),
+                ]),
+                dbc.Button(
+                    "Update Settings",
+                    id="update-settings",
+                    color="primary",
+                    className="mt-3"
+                ),
+            ])
+        ], className="mb-4"),
+        id="settings-collapse",
+        is_open=False,
+    ),
 
     # Data table
     dash_table.DataTable(
@@ -118,6 +144,17 @@ app.layout = dbc.Container([
         n_intervals=0
     )
 ], fluid=True)
+
+
+@app.callback(
+    Output("settings-collapse", "is_open"),
+    [Input("settings-button", "n_clicks")],
+    [State("settings-collapse", "is_open")],
+)
+def toggle_settings(n_clicks, is_open):
+    if n_clicks:
+        return not is_open
+    return is_open
 
 
 @app.callback(
