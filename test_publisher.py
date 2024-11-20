@@ -32,7 +32,7 @@ class HeartbeatPublisher:
             "timestamp": datetime.now().timestamp()
         }
         topic = f"{self.topic_base}/{device_id}"
-        self.client.publish(topic, json.dumps(message))
+        self.client.publish(topic, json.dumps(message), retain=False)
         print(f"Published heartbeat for {device_id}")
         
     def simulate_devices(self, duration_seconds=60, interval_seconds=10):
