@@ -26,6 +26,7 @@ app.layout = dbc.Container([
         id='dashboard-table',
         columns=[
             {'name': 'Device ID', 'id': 'device_id'},
+            {'name': 'Last Seen', 'id': 'last_seen'},
             {'name': 'Uptime (%)', 'id': 'uptime'}
         ],
         style_table={'overflowX': 'auto'},
@@ -39,8 +40,16 @@ app.layout = dbc.Container([
         },
         style_data_conditional=[
             {
-                'if': {'column_id': 'uptime'},
+                'if': {'column_id': 'uptime', 'filter_query': '{uptime} >= 90'},
                 'color': 'green'
+            },
+            {
+                'if': {'column_id': 'uptime', 'filter_query': '{uptime} < 90'},
+                'color': 'orange'
+            },
+            {
+                'if': {'column_id': 'uptime', 'filter_query': '{uptime} < 50'},
+                'color': 'red'
             }
         ]
     ),
@@ -61,7 +70,16 @@ app.layout = dbc.Container([
 def update_table(n):
     # Get the DataFrame from your Dashboard
     df = dashboard.generateViewFrame()
-    return df.to_dict('records')
+    
+    # Convert the DataFrame to records
+    records = df.to_dict('records')
+    
+    # Format the timestamps in the records
+    for record in records:
+        if 'last_seen' in record:
+            record['last_seen'] = record['last_seen'].strftime('%Y-%m-%d %H:%M:%S %Z')
+    
+    return records
 
 
 if __name__ == '__main__':
