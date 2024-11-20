@@ -69,7 +69,7 @@ class MyTestCase(unittest.TestCase):
         device = DeviceDashboardViewRow(' ', uptime=nownow)
         assert_that(device.uptime).is_equal_to(nownow)
 
-    def test_given_a_time_interval_and_matching_heartbeat_data_we_calc_100_uptime_correctly(self):
+    def test_generate_view_frame_with_perfect_uptime(self):
         dash = DashBoard(heartbeat_interval=10, uptime_window=40)
         heartbeat = HeartBeat(device_id="Patrick", timestamp=datetime.now(tz=timezone.utc))
         dash.addHeartBeat(heartbeat)

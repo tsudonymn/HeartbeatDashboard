@@ -18,12 +18,6 @@ class DashBoard:
             self.devices[device_id] = Device(device_id)
         self.devices[device_id].add_heartbeat(heartbeat)
 
-    def calculateUptime(self, device_id, now = datetime.now()):
-        device = self.devices.get(device_id)
-        if not device:
-            return 0
-        return device.calculate_uptime(self.heartbeat_interval, self.uptime_window, now)
-
     def generate_view_row(self, device_id):
         the_uptime = self.devices[device_id].calculate_uptime(
             self.heartbeat_interval, self.uptime_window)
