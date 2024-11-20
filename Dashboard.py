@@ -20,11 +20,20 @@ class DashBoard:
         elif now.tzinfo is None:
             now = now.replace(tzinfo=timezone.utc)
             
-        expected_number_of_heartbeats = self.calculate_expected_number_of_heartbeats(self.heartbeat_interval, self.uptime_window)
         window_start = now - timedelta(seconds=self.uptime_window)
         heartbeats_for_device = self.get_heartbeats_in_window(device_id, window_start, now)
-        calculated_uptime = len(heartbeats_for_device) / expected_number_of_heartbeats
-
+        
+        # Calculate expected heartbeats based on whether 'now' aligns with interval
+        expected_heartbeats = (self.uptime_window // self.heartbeat_interval)
+        
+        # If 'now' aligns with interval and we have heartbeats, expect one more
+        if now.timestamp() % self.heartbeat_interval == 0 and heartbeats_for_device:
+            expected_heartbeats += 1
+            
+        if not heartbeats_for_device:
+            return 0
+            
+        calculated_uptime = len(heartbeats_for_device) / expected_heartbeats
         return int(calculated_uptime * 100)
 
     def generate_view_row(self, device_id):
@@ -43,11 +52,26 @@ class DashBoard:
     def get_heartbeats_in_window(self, device_id, window_start, window_end):
         """Get heartbeats for a device that fall within the specified time window."""
         device_heartbeats = self.heartbeats_for_device(device_id)
-        return [hb for hb in device_heartbeats 
-                if self.is_in_window(hb.timestamp, window_start, window_end)]
+        # If window_end aligns with interval, include that exact time
+        aligned_with_interval = window_end.timestamp() % self.heartbeat_interval == 0
+        
+        if aligned_with_interval:
+            return [hb for hb in device_heartbeats 
+                   if window_start <= hb.timestamp <= window_end]
+        else:
+            return [hb for hb in device_heartbeats 
+                   if window_start <= hb.timestamp < window_end]
 
     def is_in_window(self, timestamp, window_start, window_end):
         return window_start <= timestamp <= window_end
 
     def calculate_expected_number_of_heartbeats(self, interval, window):
-        return window / interval
+        """Calculate the number of heartbeats we expect in the window.
+        If 'now' aligns with a heartbeat interval, we expect one more heartbeat.
+        If 'now' falls between intervals, we expect one less heartbeat."""
+        # Get the number of complete intervals
+        complete_intervals = window // interval
+        # Add 1 if window size is exactly divisible by interval (aligned case)
+        if window % interval == 0:
+            complete_intervals += 1
+        return complete_intervals
