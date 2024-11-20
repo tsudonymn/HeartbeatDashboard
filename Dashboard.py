@@ -1,10 +1,7 @@
 from datetime import datetime
-
 import pandas as pd
-
 from DeviceDashboardViewRow import DeviceDashboardViewRow
 from Device import Device
-
 
 class DashBoard:
     def __init__(self, heartbeat_interval = 10, uptime_window = 3600):
@@ -19,9 +16,12 @@ class DashBoard:
         self.devices[device_id].add_heartbeat(heartbeat)
 
     def generate_view_row(self, device_id):
-        the_uptime = self.devices[device_id].calculate_uptime(
-            self.heartbeat_interval, self.uptime_window)
-        return DeviceDashboardViewRow(device_id=device_id, uptime=the_uptime)
+        device = self.devices[device_id]
+        return DeviceDashboardViewRow(
+            device_id=device_id,
+            last_seen=device.get_last_seen(),
+            uptime=device.calculate_uptime(self.heartbeat_interval, self.uptime_window)
+        )
 
     def generateViewFrame(self):
         unique_ids = set(self.devices.keys())

@@ -60,27 +60,34 @@ THE_DEAD_FRAME = pd.DataFrame(data)
 
 
 class MyTestCase(unittest.TestCase):
-    def test_uptime_default_to_beginning_of_time(self):
+    def test_last_seen_defaults_to_beginning_of_time(self):
         device = DeviceDashboardViewRow(' ')
-        assert_that(device.uptime).is_equal_to(datetime.fromtimestamp(0, tz=timezone.utc))  # add assertion here
+        assert_that(device.last_seen).is_equal_to(datetime.fromtimestamp(0, tz=timezone.utc))  # add assertion here
 
-    def test_given_datetime_you_get_time_set(self):
+    def test_given_datetime_sets_last_seen(self):
         nownow = datetime.now(tz=timezone.utc)
-        device = DeviceDashboardViewRow(' ', uptime=nownow)
-        assert_that(device.uptime).is_equal_to(nownow)
+        device = DeviceDashboardViewRow(' ', last_seen=nownow)
+        assert_that(device.last_seen).is_equal_to(nownow)
 
     def test_generate_view_frame_with_perfect_uptime(self):
         dash = DashBoard(heartbeat_interval=10, uptime_window=40)
-        heartbeat = HeartBeat(device_id="Patrick", timestamp=datetime.now(tz=timezone.utc))
+        now = datetime.now(tz=timezone.utc)
+        heartbeat = HeartBeat(device_id="Patrick", timestamp=now)
         dash.addHeartBeat(heartbeat)
         dash.addHeartBeat(heartbeat.next())
         dash.addHeartBeat(heartbeat.next())
-        dash.addHeartBeat(heartbeat.next())
-        frame = dash.generateViewFrame().to_dict(orient='records')
-
-        data = [{'device_id': 'Patrick', 'uptime': 100}]
-        expected = pd.DataFrame(data).to_dict(orient='records')
-        assert_that(frame).is_equal_to(expected)
+        last_heartbeat = heartbeat.next()
+        dash.addHeartBeat(last_heartbeat)
+        
+        frame = dash.generateViewFrame()
+        records = frame.to_dict(orient='records')
+        
+        # Verify each field separately
+        assert_that(records).is_length(1)
+        record = records[0]
+        assert_that(record['device_id']).is_equal_to('Patrick')
+        assert_that(record['uptime']).is_equal_to(100)
+        assert_that(record['last_seen'].timestamp()).is_close_to(last_heartbeat.timestamp.timestamp(), tolerance=1)
 
     def test_dashboard_view_generation(self):
         dash = DashBoard(heartbeat_interval=10, uptime_window=40)

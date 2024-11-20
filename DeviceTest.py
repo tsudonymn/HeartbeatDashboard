@@ -57,6 +57,39 @@ class DeviceTest(unittest.TestCase):
         
         assert_that(str(context.exception)).contains("does not match device")
 
+    def test_last_seen_is_epoch_when_no_heartbeats(self):
+        device = Device("test_device")
+        epoch = datetime.fromtimestamp(0, tz=timezone.utc)
+        assert_that(device.get_last_seen()).is_equal_to(epoch)
+
+    def test_last_seen_updates_with_new_heartbeat(self):
+        device = Device("test_device")
+        now = datetime.now(tz=timezone.utc)
+        heartbeat = HeartBeat(device_id="test_device", timestamp=now)
+        device.add_heartbeat(heartbeat)
+        assert_that(device.get_last_seen()).is_equal_to(now)
+
+    def test_last_seen_tracks_most_recent_heartbeat(self):
+        device = Device("test_device")
+        now = datetime.now(tz=timezone.utc)
+        
+        # Add first heartbeat
+        first_heartbeat = HeartBeat(device_id="test_device", timestamp=now)
+        device.add_heartbeat(first_heartbeat)
+        
+        # Add second heartbeat 10 seconds later
+        second_time = now + timedelta(seconds=10)
+        second_heartbeat = HeartBeat(device_id="test_device", timestamp=second_time)
+        device.add_heartbeat(second_heartbeat)
+        
+        # Add third heartbeat 5 seconds after first (out of order)
+        third_time = now + timedelta(seconds=5)
+        third_heartbeat = HeartBeat(device_id="test_device", timestamp=third_time)
+        device.add_heartbeat(third_heartbeat)
+        
+        # Should still be second_time as it's the most recent
+        assert_that(device.get_last_seen()).is_equal_to(second_time)
+
 
 if __name__ == '__main__':
     unittest.main()
